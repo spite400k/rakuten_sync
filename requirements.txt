@@ -1,0 +1,5 @@
+httpx
+python-dotenv
+supabase
+supabase-py
+requests
