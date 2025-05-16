@@ -1,5 +1,5 @@
 httpx
 python-dotenv
 supabase
-supabase-py
+#supabase-py
 requests
