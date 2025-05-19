@@ -29,7 +29,6 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
           ENV: ${{ vars.ENV }}
-          GIT_ACTIONS: ${{ vars.GIT_ACTIONS }}
         run: |
           python main2.py
           python main3.py
