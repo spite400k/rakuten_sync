@@ -13,7 +13,7 @@ if os.path.exists('.env'):
 
 # --- ログ設定 ---
 def setup_logger():
-    is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+    is_github_actions = os.getenv('GIT_ACTIONS') == 'true'
     
     log_format = '%(asctime)s [%(levelname)s] %(message)s'
     handlers = [logging.StreamHandler()]  # 常に標準出力に出す
