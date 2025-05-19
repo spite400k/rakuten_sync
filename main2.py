@@ -9,9 +9,6 @@ import logging
 import json
 import platform
 
-# --- .env の読み込み（ローカルのみ） ---
-if os.getenv("ENV") != "production":
-    load_dotenv()
 
 # --- ログ設定 ---
 def setup_logger():
