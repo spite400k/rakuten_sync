@@ -12,23 +12,27 @@ if os.path.exists('.env'):
     load_dotenv()
 
 # --- ログ設定 ---
-is_github_actions = os.getenv("GITHUB_ACTIONS") == "true"
-log_dir = os.getenv("LOG_DIR", "./logs") if not is_github_actions else None
+def setup_logger():
+    is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+    
+    log_format = '%(asctime)s [%(levelname)s] %(message)s'
+    handlers = [logging.StreamHandler()]  # 常に標準出力に出す
 
-if log_dir:
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, 'rakuten_products.log')
-else:
-    log_file = None
+    if not is_github_actions:
+        # ローカル環境ならログファイルにも出力
+        log_dir = './logs'
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, 'rakuten_products.log')
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        handlers.append(file_handler)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler(log_file) if log_file else logging.NullHandler(),
-        logging.StreamHandler()  # stdout へ出力
-    ]
-)
+    logging.basicConfig(
+        level=logging.INFO,
+        format=log_format,
+        handlers=handlers
+    )
+
+setup_logger()
 
 # --- 環境変数 ---
 RAKUTEN_APP_ID = os.getenv("RAKUTEN_APP_ID")

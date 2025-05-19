@@ -14,22 +14,27 @@ if os.getenv("ENV") != "production":
     load_dotenv()
 
 # --- ログ設定 ---
-if platform.system() == 'Darwin' or platform.system() == 'Linux':
-    log_dir = os.path.expanduser('~/logs')
-else:
-    log_dir = os.path.join(os.getcwd(), 'logs')
+def setup_logger():
+    is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+    
+    log_format = '%(asctime)s [%(levelname)s] %(message)s'
+    handlers = [logging.StreamHandler()]  # 常に標準出力に出す
 
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'rakuten_ranking.log')
+    if not is_github_actions:
+        # ローカル環境ならログファイルにも出力
+        log_dir = './logs'
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, 'rakuten_products.log')
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        handlers.append(file_handler)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler(sys.stdout)  # GitHub Actions でも表示
-    ]
-)
+    logging.basicConfig(
+        level=logging.INFO,
+        format=log_format,
+        handlers=handlers
+    )
+
+setup_logger()
 
 # --- 環境変数の取得 ---
 RAKUTEN_APP_ID = os.getenv("RAKUTEN_APP_ID")
