@@ -2,28 +2,43 @@ import requests
 from supabase import create_client
 from datetime import datetime
 import os
+import sys
 from dotenv import load_dotenv
 
 import logging
 import json
+import platform
 
-load_dotenv()  # これで.envファイルを読み込み
+# --- .env の読み込み（ローカルのみ） ---
+if os.getenv("ENV") != "production":
+    load_dotenv()
 
 # --- ログ設定 ---
-log_dir = '/Users/koonishi/logs'
+if platform.system() == 'Darwin' or platform.system() == 'Linux':
+    log_dir = os.path.expanduser('~/logs')
+else:
+    log_dir = os.path.join(os.getcwd(), 'logs')
+
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'rakuten_ranking.log')
 
 logging.basicConfig(
-    filename=log_file,
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler(sys.stdout)  # GitHub Actions でも表示
+    ]
 )
 
 # --- 環境変数の取得 ---
 RAKUTEN_APP_ID = os.getenv("RAKUTEN_APP_ID")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if not RAKUTEN_APP_ID or not SUPABASE_URL or not SUPABASE_KEY:
+    logging.error("必要な環境変数が設定されていません")
+    exit(1)
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 

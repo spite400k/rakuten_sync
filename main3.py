@@ -3,27 +3,41 @@ from supabase import create_client
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from pprint import pprint
 import time
 import json
 import logging
 
-load_dotenv()  # これで.envファイルを読み込み
+# .env の読み込み（ローカル実行時のみ）
+if os.path.exists('.env'):
+    load_dotenv()
 
 # --- ログ設定 ---
-log_dir = '/Users/koonishi/logs'
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'rakuten_products.log')
+is_github_actions = os.getenv("GITHUB_ACTIONS") == "true"
+log_dir = os.getenv("LOG_DIR", "./logs") if not is_github_actions else None
+
+if log_dir:
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'rakuten_products.log')
+else:
+    log_file = None
+
 logging.basicConfig(
-    filename=log_file,
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s'
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(log_file) if log_file else logging.NullHandler(),
+        logging.StreamHandler()  # stdout へ出力
+    ]
 )
 
 # --- 環境変数 ---
 RAKUTEN_APP_ID = os.getenv("RAKUTEN_APP_ID")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# --- 必須環境変数のチェック ---
+if not all([RAKUTEN_APP_ID, SUPABASE_URL, SUPABASE_KEY]):
+    raise EnvironmentError("必要な環境変数（RAKUTEN_APP_ID, SUPABASE_URL, SUPABASE_KEY）が不足しています")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
