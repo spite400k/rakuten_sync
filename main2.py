@@ -9,6 +9,32 @@ import logging
 import json
 import platform
 
+# --- .env の読み込み（ローカルのみ） ---
+if os.getenv("ENV") != "production":
+    load_dotenv()
+
+# --- ログ設定 ---
+def setup_logger():
+    is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+    
+    log_format = '%(asctime)s [%(levelname)s] %(message)s'
+    handlers = [logging.StreamHandler()]  # 常に標準出力に出す
+
+    if not is_github_actions:
+        # ローカル環境ならログファイルにも出力
+        log_dir = './logs'
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, 'rakuten_products.log')
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        handlers.append(file_handler)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format=log_format,
+        handlers=handlers
+    )
+
+setup_logger()
 
 # --- 環境変数の取得 ---
 RAKUTEN_APP_ID = os.getenv("RAKUTEN_APP_ID")
@@ -16,6 +42,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 if not RAKUTEN_APP_ID or not SUPABASE_URL or not SUPABASE_KEY:
+    logging.error("必要な環境変数が設定されていません")
     exit(1)
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -31,8 +58,10 @@ def fetch_ranking_items():
     try:
         response = requests.get(RAKUTEN_API_URL, params=params)
         response.raise_for_status()
+        logging.info("楽天ランキングデータの取得に成功")
         return response.json().get('Items', [])
     except Exception as e:
+        logging.error(f"楽天ランキング取得失敗: {str(e)}")
         return []
 
 def transform_items(items):
@@ -71,22 +100,28 @@ def transform_items(items):
             'small_image_urls': json.dumps(item.get('smallImageUrls')),
             'timestamp': datetime.now().isoformat(),
         })
+    logging.info(f"{len(transformed)} 件のランキングデータを整形")
     return transformed
 
 def insert_into_supabase(data):
     if not data:
+        logging.warning("Supabaseへの挿入対象データが空です")
         return
     try:
         supabase.table('trn_rakuten_ranking').upsert(data).execute()
+        logging.info(f"{len(data)} 件のデータを trn_rakuten_ranking に保存完了")
     except Exception as e:
-        return
-    
+        logging.error(f"Supabase trn_rakuten_ranking upsert失敗: {str(e)}")
+
 def main():
+    logging.info("=== 楽天ランキング同期バッチ 開始 ===")
     items = fetch_ranking_items()
     if not items:
+        logging.warning("ランキングデータが取得できませんでした")
         return
     transformed_data = transform_items(items)
     insert_into_supabase(transformed_data)
+    logging.info("=== 楽天ランキング同期バッチ 終了 ===")
 
 if __name__ == '__main__':
     main()
