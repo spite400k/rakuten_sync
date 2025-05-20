@@ -25,9 +25,9 @@ jobs:
 
       - name: Run the Python script
         env:
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
           ENV: ${{ vars.ENV }}
         run: |
           python main2.py
