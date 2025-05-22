@@ -114,6 +114,45 @@ def transform_items(items):
     logging.info(f"{len(transformed)} 件のランキングデータを整形")
     return transformed
 
+def upsert_items_to_master(items):
+    if not items:
+        logging.warning("商品マスタへの登録対象データが空です")
+        return
+
+    master_items = []
+    for item in items:
+        master_items.append({
+            'item_code': item.get('itemCode'),
+            'item_name': item.get('itemName'),
+            'item_caption': item.get('itemCaption'),
+            'catchcopy': item.get('catchcopy'),
+            'item_price': int(item.get('itemPrice', 0)),
+            'item_url': item.get('itemUrl'),
+            'affiliate_url': item.get('affiliateUrl'),
+            'affiliate_rate': float(item.get('affiliateRate', 0.0)),
+            'availability': item.get('availability'),
+            'credit_card_flag': bool(item.get('creditCardFlag')),
+            'postage_flag': bool(item.get('postageFlag')),
+            'tax_flag': bool(item.get('taxFlag')),
+            'point_rate': item.get('pointRate'),
+            'review_average': float(item.get('reviewAverage', 0.0)),
+            'review_count': item.get('reviewCount'),
+            'shop_code': item.get('shopCode'),
+            'shop_name': item.get('shopName'),
+            'shop_url': item.get('shopUrl'),
+            'genre_id': item.get('genreId'),
+            'medium_image_urls': json.dumps(item.get('mediumImageUrls')),
+            'small_image_urls': json.dumps(item.get('smallImageUrls')),
+            'updated_at': datetime.now().isoformat()
+        })
+
+    try:
+        supabase.table('mst_rakuten_items').upsert(master_items, on_conflict="item_code").execute()
+        logging.info(f"{len(master_items)} 件の商品データを mst_rakuten_items に保存完了")
+    except Exception as e:
+        logging.error(f"Supabase mst_rakuten_items upsert失敗: {str(e)}")
+
+
 def insert_into_supabase(data):
     if not data:
         logging.warning("Supabaseへの挿入対象データが空です")
@@ -130,9 +169,16 @@ def main():
     if not items:
         logging.warning("ランキングデータが取得できませんでした")
         return
+
+    # 商品マスタへ登録
+    upsert_items_to_master([item['Item'] for item in items])
+
+    # ランキングデータへ登録
     transformed_data = transform_items(items)
     insert_into_supabase(transformed_data)
+
     logging.info("=== 楽天ランキング同期バッチ 終了 ===")
+
 
 if __name__ == '__main__':
     main()
