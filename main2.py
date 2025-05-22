@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# プログラム名 : example_script.py
+# 概要         : 楽天APIを利用してランキング情報を取得し、Supabaseに保存する
+# 作成者       : Your Name
+# 作成日       : 2025-05-19
+# 更新履歴     :
+#   - 2025-05-19 初版作成
+#
+
 import requests
 from supabase import create_client
 from datetime import datetime
